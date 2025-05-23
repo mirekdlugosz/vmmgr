@@ -1,19 +1,19 @@
-import sys
 import argparse
+import sys
 from pathlib import Path
 
 from vmmgr.constants import XDG_RUNTIME_DIR
 from vmmgr.formatters import ansible_formatter
 from vmmgr.formatters import shell_formatter
 from vmmgr.formatters import table_formatter
-from vmmgr.types import DomainStateEnum
+from vmmgr.libvirt import get_template_volumes
+from vmmgr.libvirt import get_vmmgr_managed_vms
+from vmmgr.libvirt import get_vmmgr_pool
 from vmmgr.os import execute_cmd
 from vmmgr.os import get_cloud_init_content
 from vmmgr.os import get_new_vm_name
 from vmmgr.os import get_osinfo_value
-from vmmgr.libvirt import get_template_volumes
-from vmmgr.libvirt import get_vmmgr_managed_vms
-from vmmgr.libvirt import get_vmmgr_pool
+from vmmgr.types import DomainStateEnum
 
 
 def handle_create(args):

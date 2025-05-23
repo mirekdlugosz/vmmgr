@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from libvirt import libvirtError
 import pytest
+from libvirt import libvirtError
 
 from vmmgr.libvirt import _get_domain_disks
 from vmmgr.libvirt import _get_domain_ip_address
@@ -46,13 +46,13 @@ def test_domain_two_disks_mix():
 def test_ip_addr_no_if():
     guest_info = {"noif": "key"}
     ip_addr = _get_domain_ip_address(guest_info)
-    assert ip_addr == None
+    assert ip_addr is None
 
 
 def test_ip_addr_only_lo():
     guest_info = {"if.0.addr.0.addr": "127.0.0.1", "if.0.addr.0.type": "ipv4", "if.0.name": "lo"}
     ip_addr = _get_domain_ip_address(guest_info)
-    assert ip_addr == None
+    assert ip_addr is None
 
 
 def test_ip_addr_only_ipv6():

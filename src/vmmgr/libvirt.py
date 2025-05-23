@@ -1,8 +1,8 @@
 import functools
 import sys
 from operator import itemgetter
-from typing import Any
 from pathlib import Path
+from typing import Any
 from xml.dom import minidom
 
 import libvirt
@@ -153,9 +153,11 @@ def get_vmmgr_pool() -> PoolInfo:
     all_pools = get_pools_info()
     vmmgr_pool = next((p for p in all_pools if p.name == VMMGR_POOL_NAME), None)
     if not vmmgr_pool:
-        sys.exit(
-            f"libvirt pool '{VMMGR_POOL_NAME}' not found. Did you change VMMGR_POOL environment variable?"
+        msg = (
+            f"libvirt pool '{VMMGR_POOL_NAME}' not found. "
+            "Did you change VMMGR_POOL environment variable?"
         )
+        sys.exit(msg)
     return vmmgr_pool
 
 

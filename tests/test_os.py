@@ -3,7 +3,6 @@ from vmmgr.os import _match_osinfo
 from vmmgr.os import _parse_virt_inspector_output
 from vmmgr.types import VirtInspectorData
 
-
 KNOWN_OSINFO = [
     "fedora41",
     "fedora42",
@@ -39,7 +38,7 @@ def test_vm_name_no_dash():
 def test_parse_virt_inspector_no_os():
     xml = "<operatingsystems/>"
     obj = _parse_virt_inspector_output(xml)
-    assert obj == None
+    assert obj is None
 
 
 def test_parse_virt_inspector_name():
