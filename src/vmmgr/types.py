@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
@@ -34,6 +35,17 @@ class PoolInfo:
     UUID: str
     path: Path
     volumes: list[libvirt.virStorageVol]
+
+
+@dataclass(frozen=True)
+class DhcpLeaseInfo:
+    mac: str
+    interface: str
+    client_id: str
+    expiry_time: datetime
+    ip_address: str
+    prefix: int
+    hostname: str | None = None
 
 
 @dataclass(frozen=True)

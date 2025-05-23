@@ -279,7 +279,10 @@ def test_vm_user_ubuntu():
 
 def test_vm_user_default():
     domain = DomainInfo(
-        name="linux-1", UUID="uuid", state=DomainStateEnum.NOSTATE, disks=[],
+        name="linux-1",
+        UUID="uuid",
+        state=DomainStateEnum.NOSTATE,
+        disks=[],
     )
     vm_user = determine_vm_user(domain)
     assert vm_user == ""

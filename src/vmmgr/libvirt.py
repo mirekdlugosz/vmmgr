@@ -1,16 +1,21 @@
 import functools
+import itertools
 import sys
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from operator import itemgetter
 from pathlib import Path
-from typing import Any
+from urllib.parse import urlparse
 
 import libvirt
 from libvirt import libvirtError
 
 from vmmgr.constants import IMAGE_EXTENSIONS
+from vmmgr.constants import LIBVIRT_CONNECTION_URIS
+from vmmgr.constants import LIBVIRT_XML_NAMESPACES
 from vmmgr.constants import VMMGR_POOL_NAME
 from vmmgr.constants import VMMGR_TEMPLATE_IMAGES_POOLS
+from vmmgr.types import DhcpLeaseInfo
 from vmmgr.types import DomainInfo
 from vmmgr.types import DomainStateEnum
 from vmmgr.types import PoolInfo
@@ -23,7 +28,40 @@ def _libvirt_connection():
     return conn
 
 
-def _get_domain_ip_address(guest_info) -> str | None:
+def _get_dhcp_leases_for_connection(uri) -> list[DhcpLeaseInfo]:
+    try:
+        conn = libvirt.open(uri)
+    except libvirtError:
+        return []
+
+    dhcp_leases = []
+    for network in conn.listAllNetworks():
+        for dhcp_lease_data in network.DHCPLeases():
+            parsed_time = datetime.fromtimestamp(dhcp_lease_data.get("expirytime", 0))
+            lease_info = DhcpLeaseInfo(
+                mac=dhcp_lease_data.get("mac", ""),
+                interface=dhcp_lease_data.get("iface", ""),
+                client_id=dhcp_lease_data.get("clientid", ""),
+                expiry_time=parsed_time,
+                ip_address=dhcp_lease_data.get("ipaddr", ""),
+                prefix=dhcp_lease_data.get("prefix", 0),
+                hostname=dhcp_lease_data.get("hostname"),
+            )
+            dhcp_leases.append(lease_info)
+    return dhcp_leases
+
+
+@functools.cache
+def _get_dhcp_leases() -> list[DhcpLeaseInfo]:
+    # we can't reuse _libvirt_connection(), because it's common for session vms to use bridge
+    # created by default system network
+    all_leases = itertools.chain.from_iterable(
+        _get_dhcp_leases_for_connection(uri) for uri in LIBVIRT_CONNECTION_URIS
+    )
+    return list(all_leases)
+
+
+def _get_domain_ip_address_guestinfo(guest_info) -> str | None:
     addresses = []
     if_data = {k.removeprefix("if."): v for k, v in guest_info.items() if k.startswith("if.")}
     if_ids = set()
@@ -50,21 +88,97 @@ def _get_domain_ip_address(guest_info) -> str | None:
         return None
 
 
-def _get_domain_guest_data(domain: libvirt.virDomain) -> dict[str, Any]:
-    state, _ = domain.state()
-    state = DomainStateEnum(state)
-    if state != DomainStateEnum.RUNNING:
+def _domain_has_guest_agent(domain_tree: ET.Element) -> bool:
+    for channel in domain_tree.findall(".//devices/channel"):
+        target = channel.find("./target")
+        if target is None:
+            continue
+        if not target.get("name", "").startswith("org.qemu.guest_agent"):
+            continue
+        conn_state = target.get("state", "disconnected")
+        if conn_state == "connected":
+            return True
+    return False
+
+
+def _try_get_domain_guest_data(
+    domain_tree: ET.Element, domain: libvirt.virDomain
+) -> dict[str, str]:
+    if not _domain_has_guest_agent(domain_tree):
         return {}
 
     try:
         guest_info = domain.guestInfo()
     except libvirtError:
         return {}
+
     return {
-        "ip_address": _get_domain_ip_address(guest_info),
+        "ip_address": _get_domain_ip_address_guestinfo(guest_info),
         "os_id": guest_info.get("os.id"),
         "os_version_id": guest_info.get("os.version-id"),
     }
+
+
+def _get_domain_xml_os_ids(domain_tree: ET.Element) -> tuple[str, str]:
+    default_tuple = ("", "")
+    os_elem = domain_tree.find(".//libosinfo:os", LIBVIRT_XML_NAMESPACES)
+    if os_elem is None:
+        return default_tuple
+
+    osinfo_uri = os_elem.get("id")
+    if not osinfo_uri:
+        return default_tuple
+
+    # the correct way is to consult osinfo DB, but that works for all common cases
+    parsed = urlparse(osinfo_uri)
+    os_id, _, os_version = parsed.path.strip("/").partition("/")
+    return (os_id, os_version)
+
+
+def _get_domain_mac_addresses(domain_tree: ET.Element) -> list[str]:
+    macs = []
+    for mac_elem in domain_tree.findall(".//interface/mac"):
+        address = mac_elem.get("address")
+        if not address:
+            continue
+        macs.append(address)
+    return macs
+
+
+def _get_domain_ip_address_leases(
+    mac_addresses: list[str], dhcp_leases: list[DhcpLeaseInfo]
+) -> list[str]:
+    ip_addresses = []
+    haystack = set(mac_addresses)
+    for lease_info in dhcp_leases:
+        if lease_info.mac not in haystack:
+            continue
+        ip_addresses.append(lease_info.ip_address)
+    return ip_addresses
+
+
+def _get_domain_supplementary_data(domain: libvirt.virDomain) -> dict[str, str]:
+    domain_tree = ET.fromstring(domain.XMLDesc())
+
+    if data := _try_get_domain_guest_data(domain_tree, domain):
+        return data
+
+    os_id, os_version_id = _get_domain_xml_os_ids(domain_tree)
+    dhcp_leases = _get_dhcp_leases()
+    mac_addresses = _get_domain_mac_addresses(domain_tree)
+    ip_addresses = _get_domain_ip_address_leases(mac_addresses, dhcp_leases)
+
+    data = {}
+    if os_id:
+        data["os_id"] = os_id
+    if os_version_id:
+        data["os_version_id"] = os_version_id
+    try:
+        data["ip_address"] = ip_addresses[0]
+    except IndexError:
+        pass
+
+    return data
 
 
 def _get_domain_disks(domain_data) -> list[Path]:
@@ -80,16 +194,16 @@ def get_domains_info() -> list[DomainInfo]:
     conn = _libvirt_connection()
     domains = []
     for domain, domain_data in conn.getAllDomainStats():
-        domain_guest_data = _get_domain_guest_data(domain)
+        supplementary_data = _get_domain_supplementary_data(domain)
         disks = _get_domain_disks(domain_data)
         domain_obj = DomainInfo(
             name=domain.name(),
             UUID=domain.UUIDString(),
             state=DomainStateEnum(domain_data.get("state.state", 0)),
             disks=disks,
-            ip_address=domain_guest_data.get("ip_address"),
-            os_id=domain_guest_data.get("os_id"),
-            os_version_id=domain_guest_data.get("os_version_id"),
+            ip_address=supplementary_data.get("ip_address"),
+            os_id=supplementary_data.get("os_id"),
+            os_version_id=supplementary_data.get("os_version_id"),
         )
         domains.append(domain_obj)
     return domains
