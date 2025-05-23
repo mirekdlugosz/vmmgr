@@ -1,0 +1,31 @@
+[project]
+name = "vmmgr"
+version = "0.1.0"
+authors = [
+  { name="Mirek Długosz", email="mirek@mirekdlugosz.com" },
+]
+description = "Virtual Machine Manager"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+]
+license = "EUPL-1.2"
+license-files = ["LICENCE*"]
+
+[project.scripts]
+vmmgr = "vmmgr:vmmgr.main"
+
+[project.urls]
+Homepage = "https://github.com/mirekdlugosz/vmmgr"
+Issues = "https://github.com/mirekdlugosz/vmmgr/issues"
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
