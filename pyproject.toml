@@ -20,7 +20,7 @@ license = "EUPL-1.2"
 license-files = ["LICENCE*"]
 
 [project.scripts]
-vmmgr = "vmmgr:vmmgr.main"
+vmmgr = "vmmgr:cli.main"
 
 [project.urls]
 Homepage = "https://github.com/mirekdlugosz/vmmgr"

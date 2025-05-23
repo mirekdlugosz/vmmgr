@@ -3,13 +3,13 @@ from pathlib import Path
 
 from libvirt import libvirtError
 
-from vmmgr.vmmgr import _get_domain_disks
-from vmmgr.vmmgr import _get_domain_ip_address
-from vmmgr.vmmgr import _get_pool_path
-from vmmgr.vmmgr import _get_vm_name_template
-from vmmgr.vmmgr import _match_osinfo
-from vmmgr.vmmgr import _parse_virt_inspector_output
-from vmmgr.vmmgr import VirtInspectorData
+from vmmgr.libvirt import _get_domain_disks
+from vmmgr.libvirt import _get_domain_ip_address
+from vmmgr.libvirt import _get_pool_path
+from vmmgr.os import _get_vm_name_template
+from vmmgr.os import _match_osinfo
+from vmmgr.os import _parse_virt_inspector_output
+from vmmgr.types import VirtInspectorData
 
 
 class ScriptTests(unittest.TestCase):
