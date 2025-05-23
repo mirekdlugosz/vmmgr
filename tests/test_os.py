@@ -1,6 +1,9 @@
 from vmmgr.os import _get_vm_name_template
 from vmmgr.os import _match_osinfo
 from vmmgr.os import _parse_virt_inspector_output
+from vmmgr.os import determine_vm_user
+from vmmgr.types import DomainInfo
+from vmmgr.types import DomainStateEnum
 from vmmgr.types import VirtInspectorData
 
 KNOWN_OSINFO = [
@@ -242,3 +245,41 @@ def test_match_osinfo_filename_ubuntu():
 def test_match_osinfo_fallback():
     osinfo = _match_osinfo(KNOWN_OSINFO, VirtInspectorData(), "")
     assert osinfo == "unknown"
+
+
+def test_vm_user_known_template():
+    domain = DomainInfo(name="dsc-fedora-1", UUID="uuid", state=DomainStateEnum.NOSTATE, disks=[])
+    vm_user = determine_vm_user(domain)
+    assert vm_user == "dscci"
+
+
+def test_vm_user_fedora():
+    domain = DomainInfo(
+        name="fedora-42-1", UUID="uuid", state=DomainStateEnum.NOSTATE, disks=[], os_id="fedora"
+    )
+    vm_user = determine_vm_user(domain)
+    assert vm_user == "fedora"
+
+
+def test_vm_user_rhel():
+    domain = DomainInfo(
+        name="rhel-9.6-1", UUID="uuid", state=DomainStateEnum.NOSTATE, disks=[], os_id="rhel"
+    )
+    vm_user = determine_vm_user(domain)
+    assert vm_user == "cloud-user"
+
+
+def test_vm_user_ubuntu():
+    domain = DomainInfo(
+        name="ubuntu25.04-1", UUID="uuid", state=DomainStateEnum.NOSTATE, disks=[], os_id="ubuntu"
+    )
+    vm_user = determine_vm_user(domain)
+    assert vm_user == "ubuntu"
+
+
+def test_vm_user_default():
+    domain = DomainInfo(
+        name="linux-1", UUID="uuid", state=DomainStateEnum.NOSTATE, disks=[],
+    )
+    vm_user = determine_vm_user(domain)
+    assert vm_user == ""

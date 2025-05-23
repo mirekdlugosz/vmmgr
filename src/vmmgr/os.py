@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import Iterable
 from xml.dom import minidom
 
+from vmmgr.constants import USER_OS_MAP
+from vmmgr.constants import USER_TEMPLATE_MAP
+from vmmgr.types import DomainInfo
 from vmmgr.types import VirtInspectorData
 
 
@@ -153,22 +156,14 @@ def get_osinfo_value(template_image_path: str, dry_run: bool) -> str:
     return matching_os
 
 
-# FIXME: rewrite that function
-def determine_vm_user(vm_name):
-    """
-    Decide which user to use when connecting based on the VM name.
-      • If the VM name starts with template "dsc-", then use "dscci".
-      • Otherwise, if it starts with "fedora" use "fedora",
-      • if it starts with "rhel" use "cloud-user".
-      • If none of these match, return the empty string.
-    """
-    parts = vm_name.split("-")
-    if parts[0] == "dsc":
-        return "dscci"
-    if parts[0].lower() == "fedora":
-        return "fedora"
-    if parts[0].lower() == "rhel":
-        return "cloud-user"
+def determine_vm_user(vm: DomainInfo):
+    template, _, _ = vm.name.partition("-")
+    if template_user := USER_TEMPLATE_MAP.get(template):
+        return template_user
+
+    if os_name := vm.os_id:
+        return USER_OS_MAP.get(os_name, "")
+
     return ""
 
 

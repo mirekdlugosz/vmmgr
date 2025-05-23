@@ -13,7 +13,7 @@ def table_formatter(vms: list[DomainInfo]) -> str:
         name = vm.name
         state = vm.state.name
         ip = vm.ip_address or ""
-        user = determine_vm_user(name)
+        user = determine_vm_user(vm)
         output.append(f"{name:<30} {state:<15} {ip:<28} {user:<10}")
     return "\n".join(output)
 
@@ -24,7 +24,7 @@ def shell_formatter(vms: list[DomainInfo]) -> str:
         name = vm.name
         ip = vm.ip_address
         state = vm.state.name
-        user = determine_vm_user(name)
+        user = determine_vm_user(vm)
         output.append(f"VM_NAME={name}    # {state}")
         output.append(f"VM_USER={user}")
         output.append(f"IP_ADDR={ip}")
@@ -39,7 +39,7 @@ def ansible_formatter(vms: list[DomainInfo]) -> str:
     for vm in vms:
         name = vm.name
         ip = vm.ip_address
-        user = determine_vm_user(name)
+        user = determine_vm_user(vm)
         comment = "" if vm.state == DomainStateEnum.RUNNING else "# "
         line = (
             f"{comment}{name} ansible_host={ip} "
