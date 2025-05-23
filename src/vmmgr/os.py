@@ -65,10 +65,7 @@ def _get_known_os_info(dry_run: bool) -> list[str]:
         "short-id",
     ]
     res = subprocess.run(os_query_cmd, capture_output=True, text=True)
-    known_os = [
-        os_name.strip() for os_name
-        in res.stdout.split("\n")[2:]
-    ]
+    known_os = [os_name.strip() for os_name in res.stdout.split("\n")[2:]]
     return [os for os in known_os if os]
 
 
@@ -96,7 +93,8 @@ def _get_virt_inspector_data(template_image_path: str, dry_run: bool) -> VirtIns
         return None
     virt_inspector_cmd = [
         "virt-inspector",
-        "-a", template_image_path,
+        "-a",
+        template_image_path,
     ]
     print(" ".join(virt_inspector_cmd))
     res = subprocess.run(virt_inspector_cmd, capture_output=True, text=True)
@@ -105,11 +103,13 @@ def _get_virt_inspector_data(template_image_path: str, dry_run: bool) -> VirtIns
     return _parse_virt_inspector_output(res.stdout)
 
 
-def _match_osinfo(known_osinfo: list[str], virt_inspector_data: VirtInspectorData | None, file_name: str) -> str:
+def _match_osinfo(
+    known_osinfo: list[str], virt_inspector_data: VirtInspectorData | None, file_name: str
+) -> str:
     if virt_inspector_data:
         if (osinfo := virt_inspector_data.osinfo) and osinfo in known_osinfo:
             return osinfo
-        if (distro := virt_inspector_data.distro):
+        if distro := virt_inspector_data.distro:
             major_version = virt_inspector_data.major_version
             minor_version = virt_inspector_data.minor_version
             candidates = [
@@ -125,7 +125,12 @@ def _match_osinfo(known_osinfo: list[str], virt_inspector_data: VirtInspectorDat
 
     while file_name:
         transformed_file_name = file_name.replace("-", "")
-        candidates = [file_name, f"{file_name}-unknown", transformed_file_name, f"{transformed_file_name}-unknown"]
+        candidates = [
+            file_name,
+            f"{file_name}-unknown",
+            transformed_file_name,
+            f"{transformed_file_name}-unknown",
+        ]
         for candidate in candidates:
             candidate = candidate.lower()
             if candidate in known_osinfo:
@@ -143,7 +148,7 @@ def get_osinfo_value(template_image_path: str, dry_run: bool) -> str:
     known_osinfo = _get_known_os_info(dry_run)
     virt_inspector_data = _get_virt_inspector_data(template_image_path, dry_run)
     file_name = Path(template_image_path).name
-    
+
     matching_os = _match_osinfo(known_osinfo, virt_inspector_data, file_name)
     return matching_os
 
@@ -157,7 +162,7 @@ def determine_vm_user(vm_name):
       • if it starts with "rhel" use "cloud-user".
       • If none of these match, return the empty string.
     """
-    parts = vm_name.split('-')
+    parts = vm_name.split("-")
     if parts[0] == "dsc":
         return "dscci"
     if parts[0].lower() == "fedora":

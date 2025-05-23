@@ -25,8 +25,7 @@ def handle_create(args):
     matching_templates = list(short_full_map.keys())
     if pattern := args.pattern:
         matching_templates = [
-            template for template in matching_templates
-            if template.startswith(pattern)
+            template for template in matching_templates if template.startswith(pattern)
         ]
 
     if args.list:
@@ -56,9 +55,15 @@ def handle_create(args):
     meta_data_path.write_text(f"local-hostname: '{new_vm_name}'\n")
 
     qemu_img_cmd = [
-        "qemu-img", "create", "-f", "qcow2",
-        "-b", template_image_path, "-F", "qcow2",
-        new_vm_image_path.as_posix()
+        "qemu-img",
+        "create",
+        "-f",
+        "qcow2",
+        "-b",
+        template_image_path,
+        "-F",
+        "qcow2",
+        new_vm_image_path.as_posix(),
     ]
     if args.disk_size:
         qemu_img_cmd.append(args.disk_size)
@@ -66,13 +71,19 @@ def handle_create(args):
 
     virt_install_cmd = [
         "virt-install",
-        "--name", new_vm_name,
-        "--memory", "2048",
-        "--vcpus", "2",
-        "--disk", new_vm_image_path.as_posix(),
+        "--name",
+        new_vm_name,
+        "--memory",
+        "2048",
+        "--vcpus",
+        "2",
+        "--disk",
+        new_vm_image_path.as_posix(),
         "--import",
-        "--network", "bridge=virbr0",
-        "--cloud-init", f"user-data={user_data_path.as_posix()},meta-data={meta_data_path.as_posix()}",
+        "--network",
+        "bridge=virbr0",
+        "--cloud-init",
+        f"user-data={user_data_path.as_posix()},meta-data={meta_data_path.as_posix()}",
         "--noautoconsole",
     ]
     if args.extra_args:
@@ -99,23 +110,22 @@ def handle_delete(args):
             "virsh",
             "destroy",
             "--remove-logs",
-            "--domain", vm_name,
+            "--domain",
+            vm_name,
         ]
         if vm.state == DomainStateEnum.RUNNING:
             execute_cmd(remove_cmd, args.dry_run)
 
-        disks = [
-            path.as_posix() for path
-            in vm.disks
-            if path.is_relative_to(vmmgr_pool.path)
-        ]
+        disks = [path.as_posix() for path in vm.disks if path.is_relative_to(vmmgr_pool.path)]
 
         undefine_cmd = [
             "virsh",
             "undefine",
             "--managed-save",
-            "--storage", ",".join(disks),
-            "--domain", vm_name,
+            "--storage",
+            ",".join(disks),
+            "--domain",
+            vm_name,
         ]
         execute_cmd(undefine_cmd, args.dry_run)
 
@@ -137,28 +147,37 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     create_parser = subparsers.add_parser("create", help="Create a new virtual machine")
-    create_parser.add_argument("pattern", nargs="?",
-                               help="Base OS image name")
-    create_parser.add_argument("--list", action="store_true",
-                               help="List available base OS images for creation (does not create a VM)")
-    create_parser.add_argument("-n", "--dry-run", action="store_true",
-                               help="Don't run external commands")
-    create_parser.add_argument("--disk-size", help="Optional disk size appended to qemu-img command")
+    create_parser.add_argument("pattern", nargs="?", help="Base OS image name")
+    create_parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List available base OS images for creation (does not create a VM)",
+    )
+    create_parser.add_argument(
+        "-n", "--dry-run", action="store_true", help="Don't run external commands"
+    )
+    create_parser.add_argument(
+        "--disk-size", help="Optional disk size appended to qemu-img command"
+    )
     create_parser.add_argument("--cloud-init", help="Path to cloud-init user-data file to copy")
-    create_parser.add_argument("extra_args", nargs=argparse.REMAINDER,
-                               help="Additional arguments passed to virt-install")
+    create_parser.add_argument(
+        "extra_args", nargs=argparse.REMAINDER, help="Additional arguments passed to virt-install"
+    )
 
     delete_parser = subparsers.add_parser("delete", help="Delete a virtual machine")
-    delete_parser.add_argument("-n", "--dry-run", action="store_true",
-                               help="Don't run external commands")
-    delete_parser.add_argument("--all", action="store_true",
-                               help="Delete all virtual machines")
-    delete_parser.add_argument("vm_name", nargs="*",
-                               help="Virtual machine name")
+    delete_parser.add_argument(
+        "-n", "--dry-run", action="store_true", help="Don't run external commands"
+    )
+    delete_parser.add_argument("--all", action="store_true", help="Delete all virtual machines")
+    delete_parser.add_argument("vm_name", nargs="*", help="Virtual machine name")
 
     list_parser = subparsers.add_parser("list", help="List virtual machines")
-    list_parser.add_argument("-f", "--format", choices=["shell", "ansible"],
-                             help="Display in format suitable for other tools")
+    list_parser.add_argument(
+        "-f",
+        "--format",
+        choices=["shell", "ansible"],
+        help="Display in format suitable for other tools",
+    )
 
     args = parser.parse_args()
     match args.command:
@@ -170,5 +189,5 @@ def main():
             handle_list(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

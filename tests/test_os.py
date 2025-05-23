@@ -21,11 +21,13 @@ def test_vm_name_boundary():
     vm_name = _get_vm_name_template(source, pattern)
     assert vm_name == "fedora-41"
 
+
 def test_vm_name_middle():
     source = "rhel-8.10-x86_64-kvm.qcow2"
     pattern = "rhel-8"
     vm_name = _get_vm_name_template(source, pattern)
     assert vm_name == "rhel-8.10"
+
 
 def test_vm_name_no_dash():
     source = "ubuntu24.04.qcow2"
@@ -33,20 +35,21 @@ def test_vm_name_no_dash():
     vm_name = _get_vm_name_template(source, pattern)
     assert vm_name == "ubuntu24.04"
 
+
 def test_parse_virt_inspector_no_os():
     xml = "<operatingsystems/>"
     obj = _parse_virt_inspector_output(xml)
     assert obj == None
 
+
 def test_parse_virt_inspector_name():
     xml = (
-        "<operatingsystems><operatingsystem>"
-        "<name>linux</name>"
-        "</operatingsystem></operatingsystems>"
+        "<operatingsystems><operatingsystem><name>linux</name></operatingsystem></operatingsystems>"
     )
     expected = VirtInspectorData(name="linux")
     obj = _parse_virt_inspector_output(xml)
     assert obj == expected
+
 
 def test_parse_virt_inspector_distro():
     xml = (
@@ -58,6 +61,7 @@ def test_parse_virt_inspector_distro():
     obj = _parse_virt_inspector_output(xml)
     assert obj == expected
 
+
 def test_parse_virt_inspector_major_version():
     xml = (
         "<operatingsystems><operatingsystem>"
@@ -67,6 +71,7 @@ def test_parse_virt_inspector_major_version():
     expected = VirtInspectorData(major_version="0")
     obj = _parse_virt_inspector_output(xml)
     assert obj == expected
+
 
 def test_parse_virt_inspector_minor_version():
     xml = (
@@ -78,6 +83,7 @@ def test_parse_virt_inspector_minor_version():
     obj = _parse_virt_inspector_output(xml)
     assert obj == expected
 
+
 def test_parse_virt_inspector_osinfo():
     xml = (
         "<operatingsystems><operatingsystem>"
@@ -87,6 +93,7 @@ def test_parse_virt_inspector_osinfo():
     expected = VirtInspectorData(osinfo="fake0")
     obj = _parse_virt_inspector_output(xml)
     assert obj == expected
+
 
 def test_parse_virt_inspector_fedora42():
     xml = (
@@ -108,6 +115,7 @@ def test_parse_virt_inspector_fedora42():
     obj = _parse_virt_inspector_output(xml)
     assert obj == expected
 
+
 def test_parse_virt_inspector_rhel10():
     xml = (
         "<operatingsystems><operatingsystem>"
@@ -127,6 +135,7 @@ def test_parse_virt_inspector_rhel10():
     )
     obj = _parse_virt_inspector_output(xml)
     assert obj == expected
+
 
 def test_parse_virt_inspector_ubuntu25():
     xml = (
@@ -148,12 +157,14 @@ def test_parse_virt_inspector_ubuntu25():
     obj = _parse_virt_inspector_output(xml)
     assert obj == expected
 
+
 def test_match_osinfo_inspector():
     virt_inspector_data = VirtInspectorData(
         osinfo="fedora42",
     )
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, "")
     assert osinfo == "fedora42"
+
 
 def test_match_osinfo_inspector_majorminor():
     virt_inspector_data = VirtInspectorData(
@@ -164,6 +175,7 @@ def test_match_osinfo_inspector_majorminor():
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, "")
     assert osinfo == "rhel8.10"
 
+
 def test_match_osinfo_inspector_major():
     virt_inspector_data = VirtInspectorData(
         distro="fedora",
@@ -172,6 +184,7 @@ def test_match_osinfo_inspector_major():
     )
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, "")
     assert osinfo == "fedora41"
+
 
 def test_match_osinfo_inspector_major_unknown():
     virt_inspector_data = VirtInspectorData(
@@ -182,6 +195,7 @@ def test_match_osinfo_inspector_major_unknown():
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, "")
     assert osinfo == "rhel9-unknown"
 
+
 def test_match_osinfo_inspector_distro():
     virt_inspector_data = VirtInspectorData(
         distro="fedora",
@@ -191,12 +205,12 @@ def test_match_osinfo_inspector_distro():
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, "")
     assert osinfo == "fedora-unknown"
 
+
 def test_match_osinfo_inspector_linux():
-    virt_inspector_data = VirtInspectorData(
-        name="linux"
-    )
+    virt_inspector_data = VirtInspectorData(name="linux")
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, "")
     assert osinfo == "linux2024"
+
 
 def test_match_osinfo_filename_rhel():
     virt_inspector_data = VirtInspectorData()
@@ -204,11 +218,13 @@ def test_match_osinfo_filename_rhel():
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, file_name)
     assert osinfo == "rhel9.4"
 
+
 def test_match_osinfo_filename_fedora():
     virt_inspector_data = VirtInspectorData()
     file_name = "fedora-41-x86_64-kvm.qcow2"
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, file_name)
     assert osinfo == "fedora41"
+
 
 def test_match_osinfo_filename_fedora_unknown():
     virt_inspector_data = VirtInspectorData()
@@ -216,11 +232,13 @@ def test_match_osinfo_filename_fedora_unknown():
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, file_name)
     assert osinfo == "fedora-unknown"
 
+
 def test_match_osinfo_filename_ubuntu():
     virt_inspector_data = VirtInspectorData()
     file_name = "ubuntu25.04.qcow2"
     osinfo = _match_osinfo(KNOWN_OSINFO, virt_inspector_data, file_name)
     assert osinfo == "ubuntu25.04"
+
 
 def test_match_osinfo_fallback():
     osinfo = _match_osinfo(KNOWN_OSINFO, VirtInspectorData(), "")

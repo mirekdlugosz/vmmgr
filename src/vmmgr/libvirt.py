@@ -62,7 +62,7 @@ def _get_domain_guest_data(domain: libvirt.virDomain) -> dict[str, Any]:
     return {
         "ip_address": _get_domain_ip_address(guest_info),
         "os_id": guest_info.get("os.id"),
-        "os_version_id": guest_info.get("os.version-id")
+        "os_version_id": guest_info.get("os.version-id"),
     }
 
 
@@ -153,7 +153,9 @@ def get_vmmgr_pool() -> PoolInfo:
     all_pools = get_pools_info()
     vmmgr_pool = next((p for p in all_pools if p.name == VMMGR_POOL_NAME), None)
     if not vmmgr_pool:
-        sys.exit(f"libvirt pool '{VMMGR_POOL_NAME}' not found. Did you change VMMGR_POOL environment variable?")
+        sys.exit(
+            f"libvirt pool '{VMMGR_POOL_NAME}' not found. Did you change VMMGR_POOL environment variable?"
+        )
     return vmmgr_pool
 
 
@@ -163,5 +165,3 @@ def get_vmmgr_managed_vms():
     vms = get_domains_info()
     filtered = [vm for vm in vms if set(vm.disks).intersection(vmmgr_volumes)]
     return filtered
-
-

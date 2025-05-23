@@ -41,5 +41,7 @@ def ansible_formatter(vms: list[DomainInfo]) -> str:
         ip = vm.ip_address
         user = determine_vm_user(name)
         comment = "" if vm.state == DomainStateEnum.RUNNING else "# "
-        output.append(f"{comment}{name} ansible_host={ip} ansible_ssh_private_key_file={ssh_key} ansible_user={user}")
+        output.append(
+            f"{comment}{name} ansible_host={ip} ansible_ssh_private_key_file={ssh_key} ansible_user={user}"
+        )
     return "\n".join(output)

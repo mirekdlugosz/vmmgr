@@ -41,4 +41,4 @@ class VirtInspectorData:
     distro: str | None = None
     major_version: str | None = None
     minor_version: str | None = None
-    name: str| None = None
+    name: str | None = None
