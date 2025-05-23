@@ -19,6 +19,11 @@ classifiers = [
 license = "EUPL-1.2"
 license-files = ["LICENCE*"]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
 [project.scripts]
 vmmgr = "vmmgr:cli.main"
 
