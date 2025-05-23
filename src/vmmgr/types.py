@@ -43,3 +43,7 @@ class VirtInspectorData:
     major_version: str | None = None
     minor_version: str | None = None
     name: str | None = None
+
+
+class VmmgrException(Exception):
+    pass

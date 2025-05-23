@@ -1,11 +1,11 @@
 from pathlib import Path
 
 import pytest
-from libvirt import libvirtError
 
 from vmmgr.libvirt import _get_domain_disks
 from vmmgr.libvirt import _get_domain_ip_address
 from vmmgr.libvirt import _get_pool_path
+from vmmgr.types import VmmgrException
 
 
 def test_domain_no_disks():
@@ -106,5 +106,5 @@ def test_xml_path_exists():
 
 def test_xml_path_error():
     xml = """<pool type='dir'><name>mypool</name></pool>"""
-    with pytest.raises(libvirtError):
+    with pytest.raises(VmmgrException):
         _get_pool_path(xml)

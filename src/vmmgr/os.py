@@ -1,9 +1,9 @@
 import itertools
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Iterable
-from xml.dom import minidom
 
 from vmmgr.constants import USER_OS_MAP
 from vmmgr.constants import USER_TEMPLATE_MAP
@@ -75,20 +75,19 @@ def _get_known_os_info(dry_run: bool) -> list[str]:
 def _parse_virt_inspector_output(xml: str) -> VirtInspectorData | None:
     requested_keys = ("osinfo", "distro", "major_version", "minor_version", "name")
     inspected_data = {}
-    tree = minidom.parseString(xml)
-    for os_elem in tree.getElementsByTagName("operatingsystem"):
-        for child in os_elem.childNodes:
-            if child.nodeType != child.ELEMENT_NODE:
-                continue
-            key = child.nodeName
-            if child.nodeName not in requested_keys:
-                continue
-            for content in child.childNodes:
-                if content.nodeType == content.TEXT_NODE:
-                    inspected_data[key] = content.nodeValue
-                    break
-        return VirtInspectorData(**inspected_data)
-    return None
+    tree = ET.fromstring(xml)
+    os_elem = tree.find(".//operatingsystem")
+    if os_elem is None:
+        return None
+
+    for child_node in os_elem.iter():
+        key = child_node.tag
+        if key not in requested_keys:
+            continue
+        if path_value := child_node.text:
+            inspected_data[key] = path_value
+
+    return VirtInspectorData(**inspected_data)
 
 
 def _get_virt_inspector_data(template_image_path: str, dry_run: bool) -> VirtInspectorData | None:

@@ -1,9 +1,9 @@
 import functools
 import sys
+import xml.etree.ElementTree as ET
 from operator import itemgetter
 from pathlib import Path
 from typing import Any
-from xml.dom import minidom
 
 import libvirt
 from libvirt import libvirtError
@@ -14,6 +14,7 @@ from vmmgr.constants import VMMGR_TEMPLATE_IMAGES_POOLS
 from vmmgr.types import DomainInfo
 from vmmgr.types import DomainStateEnum
 from vmmgr.types import PoolInfo
+from vmmgr.types import VmmgrException
 
 
 @functools.cache
@@ -95,12 +96,11 @@ def get_domains_info() -> list[DomainInfo]:
 
 
 def _get_pool_path(xml: str) -> Path:
-    tree = minidom.parseString(xml)
-    for path_node in tree.getElementsByTagName("path"):
-        for child in path_node.childNodes:
-            if child.nodeType == child.TEXT_NODE:
-                return Path(child.nodeValue)
-    raise libvirtError("<path> element not found")
+    tree = ET.fromstring(xml)
+    for path_node in tree.findall(".//path"):
+        if path_value := path_node.text:
+            return Path(path_value)
+    raise VmmgrException("<path> element not found")
 
 
 def _get_pool_volumes(pool: libvirt.virStoragePool) -> list[libvirt.virStorageVol]:
