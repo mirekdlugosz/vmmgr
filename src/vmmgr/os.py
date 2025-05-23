@@ -2,10 +2,9 @@ import itertools
 import sys
 import subprocess
 from pathlib import Path
+from typing import Iterable
 from xml.dom import minidom
 
-# FIXME: os should not know about libvirt
-from vmmgr.libvirt import get_vmmgr_managed_vms
 from vmmgr.types import VirtInspectorData
 
 
@@ -17,10 +16,8 @@ def _get_vm_name_template(source_name: str, user_pattern: str) -> str:
         return Path(source_name).stem
 
 
-def get_new_vm_name(source_image_path: str, user_pattern: str) -> str:
-    known_vms = set([vm.name for vm in get_vmmgr_managed_vms()])
-    source_name = Path(source_image_path).name
-    name_template = _get_vm_name_template(source_name, user_pattern)
+def get_new_vm_name(user_pattern: str, source_image_name: str, known_vms: Iterable[str]) -> str:
+    name_template = _get_vm_name_template(source_image_name, user_pattern)
 
     for num in itertools.count(start=1, step=1):
         new_name = f"{name_template}-{num}"
@@ -46,6 +43,7 @@ def get_cloud_init_content(candidates: tuple[str | Path | None, ...]) -> str:
     return "\n".join(content)
 
 
+# FIXME: extend / remove this
 def execute_cmd(cmd: list[str], dry_run: bool):
     print(" ".join(cmd))
     if dry_run:

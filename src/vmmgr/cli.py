@@ -45,7 +45,8 @@ def handle_create(args):
     template_pool = template_pool_map.get(template_image_path)
     vmmgr_pool = get_vmmgr_pool()
 
-    new_vm_name = get_new_vm_name(template_image_path, pattern)
+    known_vms = set([vm.name for vm in get_vmmgr_managed_vms()])
+    new_vm_name = get_new_vm_name(pattern, Path(template_image_path).name, known_vms)
     new_vm_image_path = (vmmgr_pool.path / f"{new_vm_name}.qcow2").resolve()
 
     user_data_path = Path(XDG_RUNTIME_DIR) / f"vmmgr-{new_vm_name}-user-data"
