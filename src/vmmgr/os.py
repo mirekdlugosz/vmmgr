@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Iterable
 
+from vmmgr.constants import SSH_KEY_FILES
 from vmmgr.constants import USER_OS_MAP
 from vmmgr.constants import USER_TEMPLATE_MAP
 from vmmgr.types import DomainInfo
@@ -39,10 +40,18 @@ def get_cloud_init_content(candidates: tuple[str | Path | None, ...]) -> str:
             return path.read_text()
         except OSError:
             continue
+
     content = [
         "#cloud-config",
         "allow_public_ssh_keys: true",
     ]
+    public_ssh_keys = get_ssh_public_keys()
+    if public_ssh_keys:
+        content.append("ssh_authorized_keys:")
+        for public_key in public_ssh_keys:
+            key_file_content = public_key.read_text()
+            key_file_content = key_file_content.strip()
+            content.append(f'  - "{key_file_content}"')
     return "\n".join(content)
 
 
@@ -166,10 +175,19 @@ def determine_vm_user(vm: DomainInfo):
     return ""
 
 
-def get_ssh_private_key() -> str:
-    key_names = ("id_ecdsa", "id_ecdsa_sk", "id_ed25519", "id_ed25519_sk", "id_rsa")
-    for candidate in key_names:
+def get_ssh_public_keys() -> list[Path]:
+    found_keys = []
+    ssh_key_files = set(f"{fname}.pub" for fname in SSH_KEY_FILES)
+    for file in (Path.home() / ".ssh").glob("*.pub"):
+        if file.name not in ssh_key_files:
+            continue
+        found_keys.append(file.resolve())
+    return found_keys
+
+
+def get_ssh_private_key() -> Path | None:
+    for candidate in SSH_KEY_FILES:
         path = Path.home() / ".ssh" / candidate
         if path.exists():
-            return path.as_posix()
-    return "NO_KEY"
+            return path
+    return None

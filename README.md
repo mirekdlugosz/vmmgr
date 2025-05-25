@@ -72,6 +72,20 @@ export VMMGR_TEMPLATE_IMAGES_POOLS="default,VirtualMachines"
 
 `vmmgr create --list` output should be consistent with `virsh vol-list $VMMGR_TEMPLATE_IMAGES_POOLS`. If you can't see image you have put in the pool, run `virsh pool-refresh POOL_NAME`.
 
+## cloud-init
+
+`vmmgr` uses [cloud-init](https://cloudinit.readthedocs.io/) to set new VM hostname and ensure login through SSH is possible.
+
+By default, `vmmgr` will look for `cloud-init/user-data` file relative to source image or inside `vmmgr` libvirt pool.
+
+That is, if source image resolves to `~/.local/share/libvirt/images/fedora-42-x86_64-kvm.qcow2`, `vmmgr` will try to use `~/.local/share/libvirt/images/cloud-init/user-data`. If `vmmgr` **pool** is `~/.local/share/vmmgr/`, then `vmmgr` will try to use `~/.local/share/vmmgr/cloud-init/user-data`.
+
+If neither of these files exist, `vmmgr` will create new `user-data` file with `allow_public_ssh_keys` and `ssh_authorized_keys`, and a list of public keys found in `~/.ssh/`.
+
+If you want to use your own cloud-init file, you can specify it before template pattern:
+
+    vmmgr create --cloud-init /path/to/cloud-init/user-data plucky
+
 ## Development
 
 Create new virtual environment and install package with development extras:

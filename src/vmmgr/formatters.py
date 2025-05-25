@@ -4,6 +4,12 @@ from vmmgr.types import DomainInfo
 from vmmgr.types import DomainStateEnum
 
 
+def ansible_private_key_string() -> str:
+    if not (private_key := get_ssh_private_key()):
+        return ""
+    return f"ansible_ssh_private_key_file={private_key.as_posix()}"
+
+
 def table_formatter(vms: list[DomainInfo]) -> str:
     output = []
     header = f"{'NAME':<30} {'STATE':<15} {'IP ADDRESS':<28} {'USER':<10}"
@@ -34,16 +40,13 @@ def shell_formatter(vms: list[DomainInfo]) -> str:
 
 def ansible_formatter(vms: list[DomainInfo]) -> str:
     output = []
-    ssh_key = get_ssh_private_key()
+    ssh_key = ansible_private_key_string()
 
     for vm in vms:
         name = vm.name
         ip = vm.ip_address
         user = determine_vm_user(vm)
         comment = "" if vm.state == DomainStateEnum.RUNNING else "# "
-        line = (
-            f"{comment}{name} ansible_host={ip} "
-            f"ansible_ssh_private_key_file={ssh_key} ansible_user={user}"
-        )
+        line = f"{comment}{name} ansible_host={ip} {ssh_key} ansible_user={user}"
         output.append(line)
     return "\n".join(output)
